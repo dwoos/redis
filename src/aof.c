@@ -1506,6 +1506,7 @@ void aofChildPipeReadable(aeEventLoop *el, int fd, void *privdata, int mask) {
  * the rewrite so no more data should be written, and another for the
  * parent to acknowledge it understood this new condition. */
 int aofCreatePipes(void) {
+    printf("creating aof pipes\n");
     int fds[6] = {-1, -1, -1, -1, -1, -1};
     int j;
 

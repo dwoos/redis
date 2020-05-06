@@ -2523,6 +2523,7 @@ static int clusterManagerGetAntiAffinityScore(clusterManagerNodeArray *ipnodes,
             clusterManagerNode *node = node_array->nodes[j];
             if (node == NULL) continue;
             if (!ip) ip = node->ip;
+            printf("ip %s\n", ip);
             sds types;
             /* We always use the Master ID as key. */
             sds key = (!node->replicate ? node->name : node->replicate);
@@ -2534,6 +2535,7 @@ static int clusterManagerGetAntiAffinityScore(clusterManagerNodeArray *ipnodes,
              * types string. */
             if (!node->replicate) types = sdscatprintf(types, "m%s", types);
             else types = sdscat(types, "s");
+            printf("key=%s types=%s\n", (char *)key, (char *)types);
             dictReplace(related, key, types);
         }
         /* Now it's trivial to check, for each related group having the
@@ -2572,6 +2574,7 @@ static int clusterManagerGetAntiAffinityScore(clusterManagerNodeArray *ipnodes,
 static void clusterManagerOptimizeAntiAffinity(clusterManagerNodeArray *ipnodes,
     int ip_count)
 {
+    printf("here???\n");
     clusterManagerNode **offenders = NULL;
     int score = clusterManagerGetAntiAffinityScore(ipnodes, ip_count,
                                                    NULL, NULL);
@@ -2580,22 +2583,29 @@ static void clusterManagerOptimizeAntiAffinity(clusterManagerNodeArray *ipnodes,
                           "for anti-affinity\n");
     int node_len = cluster_manager.nodes->len;
     int maxiter = 500 * node_len; // Effort is proportional to cluster size...
+    printf("time is %ld\n", time(NULL));
     srand(time(NULL));
+    printf("after srand\n");
     while (maxiter > 0) {
         int offending_len = 0;
         if (offenders != NULL) {
             zfree(offenders);
             offenders = NULL;
         }
+        printf("before clusterManagerGetAntiAffinityScore\n");
         score = clusterManagerGetAntiAffinityScore(ipnodes,
                                                    ip_count,
                                                    &offenders,
                                                    &offending_len);
+        printf("after clusterManagerGetAntiAffinityScore\n");
         if (score == 0) break; // Optimal anti affinity reached
         /* We'll try to randomly swap a slave's assigned master causing
          * an affinity problem with another random slave, to see if we
          * can improve the affinity. */
+        printf("A\n");
+        printf("About to mod by %d\n", offending_len);
         int rand_idx = rand() % offending_len;
+        printf("B\n");
         clusterManagerNode *first = offenders[rand_idx],
                            *second = NULL;
         clusterManagerNode **other_replicas = zcalloc((node_len - 1) *
@@ -2603,6 +2613,7 @@ static void clusterManagerOptimizeAntiAffinity(clusterManagerNodeArray *ipnodes,
         int other_replicas_count = 0;
         listIter li;
         listNode *ln;
+        printf("C\n");
         listRewind(cluster_manager.nodes, &li);
         while ((ln = listNext(&li)) != NULL) {
             clusterManagerNode *n = ln->value;
@@ -2613,15 +2624,18 @@ static void clusterManagerOptimizeAntiAffinity(clusterManagerNodeArray *ipnodes,
             zfree(other_replicas);
             break;
         }
+        printf("D\n");
         rand_idx = rand() % other_replicas_count;
         second = other_replicas[rand_idx];
         char *first_master = first->replicate,
              *second_master = second->replicate;
         first->replicate = second_master, first->dirty = 1;
         second->replicate = first_master, second->dirty = 1;
+        printf("E\n");
         int new_score = clusterManagerGetAntiAffinityScore(ipnodes,
                                                            ip_count,
                                                            NULL, NULL);
+        printf("F\n");
         /* If the change actually makes thing worse, revert. Otherwise
          * leave as it is because the best solution may need a few
          * combined swaps. */
@@ -5232,7 +5246,7 @@ assign_replicas:
     }
     clusterManagerOptimizeAntiAffinity(ip_nodes, ip_count);
     clusterManagerShowNodes();
-    if (confirmWithYes("Can I set the above configuration?")) {
+    if (1) {//(confirmWithYes("Can I set the above configuration?")) {
         listRewind(cluster_manager.nodes, &li);
         while ((ln = listNext(&li)) != NULL) {
             clusterManagerNode *node = ln->value;
@@ -7640,6 +7654,7 @@ static void intrinsicLatencyMode(void) {
  *--------------------------------------------------------------------------- */
 
 int main(int argc, char **argv) {
+    sleep(1);
     int firstarg;
 
     config.hostip = sdsnew("127.0.0.1");

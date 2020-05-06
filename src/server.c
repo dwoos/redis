@@ -1764,6 +1764,7 @@ void updateCachedTime(void) {
  */
 
 int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
+    printf("serverCron executing\n");
     int j;
     UNUSED(eventLoop);
     UNUSED(id);
@@ -2033,7 +2034,6 @@ int serverCron(struct aeEventLoop *eventLoop, long long id, void *clientData) {
  * for ready file descriptors. */
 void beforeSleep(struct aeEventLoop *eventLoop) {
     UNUSED(eventLoop);
-
     /* Call the Redis Cluster before sleep function. Note that this function
      * may change the state of Redis Cluster (from ok to fail or vice versa),
      * so it's a good idea to call it before serving the unblocked clients
@@ -2086,6 +2086,7 @@ void beforeSleep(struct aeEventLoop *eventLoop) {
      * releasing the GIL. Redis main thread will not touch anything at this
      * time. */
     if (moduleCount()) moduleReleaseGIL();
+
 }
 
 /* This function is called immadiately after the event loop multiplexing

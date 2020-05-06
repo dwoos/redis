@@ -1279,6 +1279,7 @@ int clusterHandshakeInProgress(char *ip, int port, int cport) {
  * EAGAIN - There is already an handshake in progress for this address.
  * EINVAL - IP or port are not valid. */
 int clusterStartHandshake(char *ip, int port, int cport) {
+    printf("Starting cluster handshake");
     clusterNode *n;
     char norm_ip[NET_IP_STR_LEN];
     struct sockaddr_storage sa;
